@@ -37,6 +37,11 @@ public class MediaWrapper extends Binder {
         Utils.resolveCallback(promise);
     }
 
+    public void updateMeta(final Bundle data) {
+        Track track = new Track(context, manager, data);
+        manager.updateMeta(track);
+    }
+
     public void updateOptions(final Bundle bundle) {
         manager.updateOptions(bundle);
     }
@@ -57,6 +62,12 @@ public class MediaWrapper extends Binder {
         Playback pb = manager.getPlayback();
         if(pb == null) return;
         pb.remove(ids, promise);
+    }
+
+    public void removeUpcomingTracks() {
+        Playback pb = manager.getPlayback();
+        if(pb == null) return;
+        pb.removeUpcomingTracks();
     }
 
     public void skip(final String id, final Promise promise) {
@@ -137,11 +148,23 @@ public class MediaWrapper extends Binder {
 
         for(Track track : pb.getQueue()) {
             if(track.id.equals(id)) {
-                Utils.resolveCallback(callback, Arguments.fromBundle(track.toBundle()));
+                Utils.resolveCallback(callback, Arguments.fromBundle(track.originalItem));
                 return;
             }
         }
         Utils.rejectCallback(callback, "track", "No track found");
+    }
+
+    public void getQueue(final Promise callback) {
+        Playback pb = manager.getPlayback();
+        if(checkPlayback(pb, callback)) return;
+
+        List queue = new ArrayList();
+        for (Track track : pb.getQueue()) {
+            queue.add(track.originalItem);
+        }
+
+        Utils.resolveCallback(callback, Arguments.fromList(queue));
     }
 
     public void getCurrentTrack(final Promise callback) {
@@ -151,7 +174,7 @@ public class MediaWrapper extends Binder {
         Track track = pb.getCurrentTrack();
 
         if(track == null) {
-            Utils.rejectCallback(callback, "track", "No track playing");
+            Utils.resolveCallback(callback, null);
         } else {
             Utils.resolveCallback(callback, track.id);
         }
