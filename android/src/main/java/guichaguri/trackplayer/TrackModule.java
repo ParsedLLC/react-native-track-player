@@ -1,6 +1,5 @@
 package guichaguri.trackplayer;
 
-import android.app.Service;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
@@ -16,6 +15,7 @@ import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 import guichaguri.trackplayer.logic.Utils;
+import guichaguri.trackplayer.logic.track.Track;
 import guichaguri.trackplayer.logic.components.MediaWrapper;
 import guichaguri.trackplayer.logic.services.PlayerService;
 import java.util.ArrayDeque;
@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.Nullable;
 
+import android.util.Log;
 /**
  * @author Guilherme Chaguri
  */
@@ -147,6 +148,18 @@ public class TrackModule extends ReactContextBaseJavaModule implements ServiceCo
     }
 
     @ReactMethod
+    public void updateMetaData(ReadableMap data) {
+        final Bundle metadata = Arguments.toBundle(data);
+        
+        waitForConnection(new Runnable() {
+            @Override
+            public void run() {
+                binder.updateMeta(metadata);
+            }
+        });
+    }
+
+    @ReactMethod
     public void destroy() {
         if(binder != null) binder.destroy();
         getReactApplicationContext().unbindService(this);
@@ -184,6 +197,16 @@ public class TrackModule extends ReactContextBaseJavaModule implements ServiceCo
             @Override
             public void run() {
                 binder.remove(trackList, callback);
+            }
+        });
+    }
+
+    @ReactMethod
+    public void removeUpcomingTracks() {
+        waitForConnection(new Runnable() {
+            @Override
+            public void run() {
+                binder.removeUpcomingTracks();
             }
         });
     }
@@ -314,6 +337,16 @@ public class TrackModule extends ReactContextBaseJavaModule implements ServiceCo
             @Override
             public void run() {
                 binder.getTrack(id, callback);
+            }
+        });
+    }
+
+    @ReactMethod
+    public void getQueue(final Promise callback) {
+        waitForConnection(new Runnable() {
+            @Override
+            public void run() {
+                binder.getQueue(callback);
             }
         });
     }
