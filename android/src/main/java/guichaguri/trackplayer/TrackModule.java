@@ -202,16 +202,6 @@ public class TrackModule extends ReactContextBaseJavaModule implements ServiceCo
     }
 
     @ReactMethod
-    public void removeUpcomingTracks() {
-        waitForConnection(new Runnable() {
-            @Override
-            public void run() {
-                binder.removeUpcomingTracks();
-            }
-        });
-    }
-
-    @ReactMethod
     public void skip(final String track, final Promise callback) {
         waitForConnection(new Runnable() {
             @Override
@@ -337,16 +327,6 @@ public class TrackModule extends ReactContextBaseJavaModule implements ServiceCo
             @Override
             public void run() {
                 binder.getTrack(id, callback);
-            }
-        });
-    }
-
-    @ReactMethod
-    public void getQueue(final Promise callback) {
-        waitForConnection(new Runnable() {
-            @Override
-            public void run() {
-                binder.getQueue(callback);
             }
         });
     }
