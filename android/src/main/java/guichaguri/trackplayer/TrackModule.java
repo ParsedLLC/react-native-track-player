@@ -1,5 +1,6 @@
 package guichaguri.trackplayer;
 
+import android.app.Service;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
@@ -15,7 +16,7 @@ import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 import guichaguri.trackplayer.logic.Utils;
-import guichaguri.trackplayer.logic.track.Track;
+
 import guichaguri.trackplayer.logic.components.MediaWrapper;
 import guichaguri.trackplayer.logic.services.PlayerService;
 import java.util.ArrayDeque;
