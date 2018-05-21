@@ -157,7 +157,7 @@ public class MediaManager {
     }
 
     public void onPause() {
-        Log.d(Utils.TAG, "onPause: The service is now in background again, audio focus, wake and wifi locks have been released");
+        Log.d(Utils.TAG, "onPause: The service is now in background again, wake and wifi locks have been released");
 
         // Set the service as background, keeping the notification
         service.stopForeground(false);
@@ -171,8 +171,7 @@ public class MediaManager {
                 wifiLock.release();
             }
 
-            // We'll disable the audio focus as we don't need it anymore
-            focus.disable();
+            // Don't disable focus at this point, so pausing via AUDIOFOCUS_LOSS can resume upon AUDIOFOCUS_GAIN
         }
     }
 
