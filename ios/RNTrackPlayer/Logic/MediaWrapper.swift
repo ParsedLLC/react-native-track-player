@@ -252,6 +252,12 @@ class MediaWrapper: AudioPlayerDelegate {
     }
     
     func audioPlayer(_ audioPlayer: AudioPlayer, didUpdateEmptyMetadataOn item: Track, withData data: Metadata) {
-        delegate?.updateMetadata(data: data)
+        var dict: [String: String] = [:]
+        for md in data {
+            if let songName = md.value(forKey: "value") as? String {
+                dict[(md.value(forKey: "key") as? String)!] = songName;
+            }
+        }
+        delegate?.updateMetadata(data: dict)
     }
 }
