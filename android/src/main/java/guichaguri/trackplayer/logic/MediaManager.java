@@ -4,18 +4,28 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.WifiLock;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Timer;
+import java.util.TimerTask;
+
 import guichaguri.trackplayer.logic.components.FocusManager;
 import guichaguri.trackplayer.logic.services.PlayerService;
 import guichaguri.trackplayer.logic.track.Track;
 import guichaguri.trackplayer.metadata.Metadata;
+import guichaguri.trackplayer.metadata.components.IcyStreamMeta;
 import guichaguri.trackplayer.metadata.components.MediaNotification;
 import guichaguri.trackplayer.player.Playback;
 import guichaguri.trackplayer.player.players.AndroidPlayback;
 import guichaguri.trackplayer.player.players.ExoPlayback;
+import saschpe.exoplayer2.ext.icy.IcyHttpDataSource;
 
 /**
  * @author Guilherme Chaguri
@@ -224,6 +234,15 @@ public class MediaManager {
         Events.dispatchEvent(service, Events.PLAYBACK_STATE, bundle);
     }
 
+    public void onMetadataUpdate(IcyHttpDataSource.IcyMetadata icyMetadata) {
+        Log.d(Utils.TAG, "onMetadataUpdate");
+
+        Bundle bundle = new Bundle();
+
+        bundle.putString("metadata", icyMetadata.toString());
+        Events.dispatchEvent(service, Events.METADATA_UPDATE, bundle);
+    }
+
     public void onTrackUpdate(Track previous, long prevPos, Track next, boolean changed) {
         Log.d(Utils.TAG, "onTrackUpdate");
 
@@ -303,5 +322,4 @@ public class MediaManager {
             wakeLock.release();
         }
     }
-
 }

@@ -1,7 +1,9 @@
+
 package guichaguri.trackplayer.player.players;
 
 import android.content.Context;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.media.session.PlaybackStateCompat;
 import com.facebook.react.bridge.Promise;
@@ -11,6 +13,8 @@ import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
 import com.google.android.exoplayer2.source.ExtractorMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
+import com.google.android.exoplayer2.source.TrackGroup;
+import guichaguri.trackplayer.metadata.Metadata;
 import com.google.android.exoplayer2.source.dash.DashMediaSource;
 import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource;
 import com.google.android.exoplayer2.source.hls.HlsMediaSource;
@@ -32,20 +36,37 @@ import guichaguri.trackplayer.logic.MediaManager;
 import guichaguri.trackplayer.logic.Utils;
 import guichaguri.trackplayer.logic.track.Track;
 import guichaguri.trackplayer.logic.track.TrackType;
+import guichaguri.trackplayer.metadata.components.IcyStreamMeta;
 import guichaguri.trackplayer.player.Playback;
 import java.io.File;
+import android.util.Log;
 
+import java.net.MalformedURLException;
+import java.util.*;
 import static com.google.android.exoplayer2.DefaultLoadControl.*;
+import android.os.Handler;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import saschpe.exoplayer2.ext.icy.IcyHttpDataSource;
+import saschpe.exoplayer2.ext.icy.IcyHttpDataSourceFactory;
 
 /**
  * Feature-rich player using {@link SimpleExoPlayer}
  *
  * @author Guilherme Chaguri
  */
-public class ExoPlayback extends Playback implements EventListener {
+public class ExoPlayback extends Playback implements EventListener, IcyHttpDataSource.IcyMetadataListener {
 
     private final SimpleExoPlayer player;
     private final long cacheMaxSize;
+    private URL streamUrl;
+    private boolean isError;
+    private Map<String, String> metadata;
 
     private Promise loadCallback = null;
     private boolean playing = false;
@@ -59,7 +80,8 @@ public class ExoPlayback extends Playback implements EventListener {
         int multiplier = DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS / DEFAULT_BUFFER_FOR_PLAYBACK_MS;
 
         DefaultAllocator allocator = new DefaultAllocator(true, 0x10000);
-        LoadControl control = new DefaultLoadControl(allocator, minBuffer, maxBuffer, playBuffer, playBuffer * multiplier);
+//        LoadControl control = new DefaultLoadControl(allocator, minBuffer, maxBuffer, playBuffer, playBuffer * multiplier);
+        LoadControl control = new DefaultLoadControl();
 
         player = ExoPlayerFactory.newSimpleInstance(new DefaultRenderersFactory(context), new DefaultTrackSelector(), control);
         player.setAudioStreamType(C.STREAM_TYPE_MUSIC);
@@ -75,20 +97,22 @@ public class ExoPlayback extends Playback implements EventListener {
         Uri url = track.url;
 
         String userAgent = Util.getUserAgent(context, "react-native-track-player");
-        DefaultHttpDataSourceFactory httpDataSourceFactory = new DefaultHttpDataSourceFactory(
-            userAgent,
-            null,
-            DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS,
-            DefaultHttpDataSource.DEFAULT_READ_TIMEOUT_MILLIS,
-            true
-        );
-        DataSource.Factory factory = new DefaultDataSourceFactory(context, null, httpDataSourceFactory);
+
+        IcyHttpDataSourceFactory factory = new IcyHttpDataSourceFactory.Builder(Util.getUserAgent(context, "Futuri"))
+                .setIcyHeadersListener(null)
+                .setIcyMetadataChangeListener(this).build();
+        DefaultDataSourceFactory datasourceFactory = new DefaultDataSourceFactory(context, null, factory);
+
+        ExtractorMediaSource mediaSource = new ExtractorMediaSource.Factory(datasourceFactory)
+                .setExtractorsFactory(new DefaultExtractorsFactory())
+                .createMediaSource(url);
+
         MediaSource source;
 
         if(cacheMaxSize > 0 && !track.urlLocal) {
             File cacheDir = new File(context.getCacheDir(), "TrackPlayer");
             Cache cache = new SimpleCache(cacheDir, new LeastRecentlyUsedCacheEvictor(cacheMaxSize));
-            factory = new CacheDataSourceFactory(cache, factory, 0, cacheMaxSize);
+//            factory = new CacheDataSourceFactory(cache, factory, 0, cacheMaxSize);
         }
 
         if(track.type == TrackType.DASH) {
@@ -102,6 +126,12 @@ public class ExoPlayback extends Playback implements EventListener {
         }
 
         player.prepare(source);
+    }
+
+    public void onIcyMetaData(IcyHttpDataSource.IcyMetadata icyMetadata) {
+        Log.d("XXX", "onIcyMetaData: %s".format(icyMetadata.toString()));
+        manager.onMetadataUpdate(icyMetadata);
+
     }
 
     @Override
@@ -232,6 +262,11 @@ public class ExoPlayback extends Playback implements EventListener {
     }
 
     @Override
+    public void onSeekProcessed() {
+
+    }
+
+    @Override
     public void onPlayerError(ExoPlaybackException error) {
         Utils.rejectCallback(loadCallback, error);
         loadCallback = null;
@@ -240,7 +275,17 @@ public class ExoPlayback extends Playback implements EventListener {
     }
 
     @Override
-    public void onPositionDiscontinuity() {
+    public void onPositionDiscontinuity(int reason) {
+
+    }
+
+    @Override
+    public void onShuffleModeEnabledChanged(boolean enabled) {
+
+    }
+
+    @Override
+    public void onRepeatModeChanged(int mode) {
 
     }
 
