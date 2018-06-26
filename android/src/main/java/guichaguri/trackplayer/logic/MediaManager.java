@@ -239,7 +239,7 @@ public class MediaManager {
 
         Bundle bundle = new Bundle();
 
-        bundle.putString("metadata", icyMetadata.toString());
+        bundle.putString("metadata", icyMetadata.getStreamTitle());
         Events.dispatchEvent(service, Events.METADATA_UPDATE, bundle);
     }
 
