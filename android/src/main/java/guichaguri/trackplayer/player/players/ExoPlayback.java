@@ -101,11 +101,11 @@ public class ExoPlayback extends Playback implements EventListener, IcyHttpDataS
         IcyHttpDataSourceFactory factory = new IcyHttpDataSourceFactory.Builder(Util.getUserAgent(context, "Futuri"))
                 .setIcyHeadersListener(null)
                 .setIcyMetadataChangeListener(this).build();
-        DefaultDataSourceFactory datasourceFactory = new DefaultDataSourceFactory(context, null, factory);
+        // DefaultDataSourceFactory datasourceFactory = new DefaultDataSourceFactory(context, null, factory);
 
-        ExtractorMediaSource mediaSource = new ExtractorMediaSource.Factory(datasourceFactory)
-                .setExtractorsFactory(new DefaultExtractorsFactory())
-                .createMediaSource(url);
+        // ExtractorMediaSource mediaSource = new ExtractorMediaSource.Factory(datasourceFactory)
+        //         .setExtractorsFactory(new DefaultExtractorsFactory())
+        //         .createMediaSource(url);
 
         MediaSource source;
 
@@ -261,10 +261,10 @@ public class ExoPlayback extends Playback implements EventListener, IcyHttpDataS
         }
     }
 
-    @Override
-    public void onSeekProcessed() {
+    // @Override
+    // public void onSeekProcessed() {
 
-    }
+    // }
 
     @Override
     public void onPlayerError(ExoPlaybackException error) {
@@ -275,19 +275,19 @@ public class ExoPlayback extends Playback implements EventListener, IcyHttpDataS
     }
 
     @Override
-    public void onPositionDiscontinuity(int reason) {
+    public void onPositionDiscontinuity() {
 
     }
 
-    @Override
-    public void onShuffleModeEnabledChanged(boolean enabled) {
+    // @Override
+    // public void onShuffleModeEnabledChanged(boolean enabled) {
 
-    }
+    // }
 
-    @Override
-    public void onRepeatModeChanged(int mode) {
+    // @Override
+    // public void onRepeatModeChanged(int mode) {
 
-    }
+    // }
 
     @Override
     public void onPlaybackParametersChanged(PlaybackParameters playbackParameters) {
