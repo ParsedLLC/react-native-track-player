@@ -1,83 +1,62 @@
-package guichaguri.trackplayer.metadata.components;
+package com.guichaguri.trackplayer.service.metadata;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.v4.media.RatingCompat;
 import android.support.v4.media.session.MediaSessionCompat;
-import guichaguri.trackplayer.logic.Events;
-import guichaguri.trackplayer.logic.MediaManager;
-import guichaguri.trackplayer.logic.Utils;
-import guichaguri.trackplayer.logic.track.Track;
+import com.guichaguri.trackplayer.module.MusicEvents;
+import com.guichaguri.trackplayer.service.MusicManager;
+import com.guichaguri.trackplayer.service.MusicService;
+import com.guichaguri.trackplayer.service.Utils;
+import com.guichaguri.trackplayer.service.models.Track;
+import java.util.List;
 
 /**
- * @author Guilherme Chaguri
+ * @author Guichaguri
  */
-public class ButtonListener extends MediaSessionCompat.Callback {
+public class ButtonEvents extends MediaSessionCompat.Callback {
 
-    private final Context context;
-    private final MediaManager manager;
+    private final MusicService service;
+    private final MusicManager manager;
 
-    public ButtonListener(Context context, MediaManager manager) {
-        this.context = context;
+    public ButtonEvents(MusicService service, MusicManager manager) {
+        this.service = service;
         this.manager = manager;
     }
 
     @Override
     public void onPlay() {
-        Events.dispatchEvent(context, Events.BUTTON_PLAY, null);
+        service.emit(MusicEvents.BUTTON_PLAY, null);
     }
 
     @Override
     public void onPause() {
-        Events.dispatchEvent(context, Events.BUTTON_PAUSE, null);
+        service.emit(MusicEvents.BUTTON_PAUSE, null);
     }
 
     @Override
     public void onStop() {
-        Events.dispatchEvent(context, Events.BUTTON_STOP, null);
+        service.emit(MusicEvents.BUTTON_STOP, null);
     }
 
-    @Override
-    public void onSkipToNext() {
-        Events.dispatchEvent(context, Events.BUTTON_SKIP_NEXT, null);
-    }
-
-    @Override
-    public void onSkipToPrevious() {
-        Events.dispatchEvent(context, Events.BUTTON_SKIP_PREVIOUS, null);
-    }
-
-    @Override
-    public void onSkipToQueueItem(long id) {
-        for(Track track : manager.getPlayback().getQueue()) {
-            if(track.queueId == id) {
-                Bundle bundle = new Bundle();
-                bundle.putString("id", track.id);
-                Events.dispatchEvent(context, Events.BUTTON_SKIP, bundle);
-                break;
-            }
-        }
-    }
 
     @Override
     public void onPlayFromMediaId(String mediaId, Bundle extras) {
-        // Required for Android Auto
         Bundle bundle = new Bundle();
         bundle.putString("id", mediaId);
-        Events.dispatchEvent(context, Events.BUTTON_PLAY_FROM_ID, bundle);
+        service.emit(MusicEvents.BUTTON_PLAY_FROM_ID, bundle);
     }
 
     @SuppressLint("InlinedApi")
     @Override
     public void onPlayFromSearch(String query, Bundle extras) {
-        // Required for Android Auto
         Bundle bundle = new Bundle();
         bundle.putString("query", query);
 
         if(extras.containsKey(MediaStore.EXTRA_MEDIA_FOCUS)) {
             String focus = extras.getString(MediaStore.EXTRA_MEDIA_FOCUS);
+
             if(MediaStore.Audio.Artists.ENTRY_CONTENT_TYPE.equals(focus)) {
                 focus = "artist";
             } else if(MediaStore.Audio.Albums.ENTRY_CONTENT_TYPE.equals(focus)) {
@@ -89,6 +68,7 @@ public class ButtonListener extends MediaSessionCompat.Callback {
             } else if(MediaStore.Audio.Media.ENTRY_CONTENT_TYPE.equals(focus)) {
                 focus = "title";
             }
+
             bundle.putString("focus", focus);
         }
 
@@ -103,34 +83,58 @@ public class ButtonListener extends MediaSessionCompat.Callback {
         if(extras.containsKey(MediaStore.EXTRA_MEDIA_PLAYLIST))
             bundle.putString("playlist", extras.getString(MediaStore.EXTRA_MEDIA_PLAYLIST));
 
-        Events.dispatchEvent(context, Events.BUTTON_PLAY_FROM_SEARCH, bundle);
+        service.emit(MusicEvents.BUTTON_PLAY_FROM_SEARCH, bundle);
     }
 
     @Override
-    public void onSeekTo(long pos) {
-        Bundle bundle = new Bundle();
-        Utils.setTime(bundle, "position", pos);
-        Events.dispatchEvent(context, Events.BUTTON_SEEK_TO, bundle);
+    public void onSkipToQueueItem(long id) {
+        List<Track> tracks = manager.getPlayback().getQueue();
+
+        for(Track track : tracks) {
+            if(track.queueId != id) continue;
+
+            Bundle bundle = new Bundle();
+            bundle.putString("id", track.id);
+            service.emit(MusicEvents.BUTTON_SKIP, bundle);
+            break;
+        }
     }
 
     @Override
-    public void onSetRating(RatingCompat rating) {
-        Bundle bundle = new Bundle();
-        Utils.setRating(bundle, "rating", rating);
-        Events.dispatchEvent(context, Events.BUTTON_SET_RATING, bundle);
+    public void onSkipToPrevious() {
+        service.emit(MusicEvents.BUTTON_SKIP_PREVIOUS, null);
     }
 
     @Override
-    public void onFastForward() {
-        Bundle bundle = new Bundle();
-        bundle.putInt("interval", manager.getMetadata().getJumpInterval());
-        Events.dispatchEvent(context, Events.BUTTON_JUMP_FORWARD, bundle);
+    public void onSkipToNext() {
+        service.emit(MusicEvents.BUTTON_SKIP_NEXT, null);
     }
 
     @Override
     public void onRewind() {
         Bundle bundle = new Bundle();
         bundle.putInt("interval", manager.getMetadata().getJumpInterval());
-        Events.dispatchEvent(context, Events.BUTTON_JUMP_BACKWARD, bundle);
+        service.emit(MusicEvents.BUTTON_JUMP_BACKWARD, bundle);
+    }
+
+    @Override
+    public void onFastForward() {
+        Bundle bundle = new Bundle();
+        bundle.putInt("interval", manager.getMetadata().getJumpInterval());
+        service.emit(MusicEvents.BUTTON_JUMP_FORWARD, bundle);
+    }
+
+    @Override
+    public void onSeekTo(long pos) {
+        Bundle bundle = new Bundle();
+        bundle.putDouble("position", Utils.toSeconds(pos));
+        service.emit(MusicEvents.BUTTON_SEEK_TO, bundle);
+    }
+
+    @Override
+    public void onSetRating(RatingCompat rating) {
+        Bundle bundle = new Bundle();
+        Utils.setRating(bundle, "rating", rating);
+        service.emit(MusicEvents.BUTTON_SET_RATING, bundle);
     }
 }

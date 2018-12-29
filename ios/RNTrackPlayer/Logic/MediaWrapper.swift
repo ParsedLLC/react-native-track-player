@@ -140,7 +140,6 @@ class MediaWrapper: AudioPlayerDelegate {
         if let trackIndex = queue.index(where: { $0.id == id }) {
             currentTrack?.skipped = true
             currentIndex = trackIndex
-            play()
         }
     }
     
