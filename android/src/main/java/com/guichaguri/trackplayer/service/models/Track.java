@@ -71,6 +71,7 @@ public class Track implements IcyHttpDataSource.IcyHeadersListener, IcyHttpDataS
     public Bundle originalItem;
 
     public RatingCompat rating;
+    public MusicService musicService = new MusicService();
 
     public final long queueId;
 
@@ -200,6 +201,6 @@ public class Track implements IcyHttpDataSource.IcyHeadersListener, IcyHttpDataS
 
     @Override
     public void onIcyMetaData(IcyHttpDataSource.IcyMetadata icyMetadata) {
-        System.out.println(icyMetadata.getMetadata());
+        musicService.emit(icyMetadata);
     }
 }
