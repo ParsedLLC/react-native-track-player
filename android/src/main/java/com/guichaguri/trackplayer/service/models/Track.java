@@ -23,6 +23,8 @@ import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
 import com.guichaguri.trackplayer.service.Utils;
 import com.guichaguri.trackplayer.service.player.LocalPlayback;
+import com.guichaguri.trackplayer.service.MusicService;
+import com.guichaguri.trackplayer.module.MusicEvents;
 
 import java.util.ArrayList;
 import java.util.List;
