@@ -201,6 +201,8 @@ public class Track implements IcyHttpDataSource.IcyHeadersListener, IcyHttpDataS
 
     @Override
     public void onIcyMetaData(IcyHttpDataSource.IcyMetadata icyMetadata) {
-        musicService.emit(icyMetadata);
+        Bundle bundle = new Bundle();
+        bundle.putString("metadata", icyMetadata.getMetadata().toString());
+        musicService.emit(MusicEvents.METADATA_UPDATE, bundle);
     }
 }
