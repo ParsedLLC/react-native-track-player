@@ -23,6 +23,9 @@ import com.guichaguri.trackplayer.service.Utils;
 import com.guichaguri.trackplayer.service.player.LocalPlayback;
 import java.util.ArrayList;
 import java.util.List;
+import saschpe.exoplayer2.ext.icy.IcyHttpDataSource;
+import saschpe.exoplayer2.ext.icy.IcyHttpDataSourceFactory;
+
 
 import static android.support.v4.media.MediaMetadataCompat.*;
 
@@ -146,12 +149,24 @@ public class Track {
         } else {
 
             // Creates a default http source factory, enabling cross protocol redirects
-            ds = new DefaultHttpDataSourceFactory(
-                    userAgent, null,
-                    DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS,
-                    DefaultHttpDataSource.DEFAULT_READ_TIMEOUT_MILLIS,
-                    true
-            );
+        IcyHttpDataSourceFactory factory = new IcyHttpDataSourceFactory.Builder()
+                .setIcyHeadersListener(null)
+                .setIcyMetadataChangeListener(this).build();
+        // DefaultDataSourceFactory datasourceFactory = new DefaultDataSourceFactory(ctx, null, factory);
+
+
+            ds = DefaultDataSourceFactory(ctx, null, factory);
+            // ds = new DefaultHttpDataSourceFactory(
+            //         userAgent, null,
+            //         DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS,
+            //         DefaultHttpDataSource.DEFAULT_READ_TIMEOUT_MILLIS,
+            //         true
+            // );
+
+        ExtractorMediaSource mediaSource = new ExtractorMediaSource.Factory(ds)
+                .setExtractorsFactory(new DefaultExtractorsFactory())
+                .createMediaSource(url);
+
 
             ds = playback.enableCaching(ds);
 
