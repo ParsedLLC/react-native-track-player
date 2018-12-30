@@ -59,11 +59,11 @@ repositories {
 dependencies {
     //noinspection GradleDynamicVersion
     implementation 'com.facebook.react:react-native:+'
-    compile 'saschpe.android:exoplayer2-ext-icy:2.1.0'
+    implementation 'saschpe.android:exoplayer2-ext-icy:2.1.0'
 
 
     // ExoPlayer Core
-    implementation 'com.google.android.exoplayer:exoplayer-core:2.9.0'
+    implementation 'com.google.android.exoplayer:exoplayer-core:2.9.2'
 
     // ExoPlayer DASH
     if (dash) {

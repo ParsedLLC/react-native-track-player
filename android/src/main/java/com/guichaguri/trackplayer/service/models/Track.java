@@ -7,6 +7,8 @@ import android.support.v4.media.MediaDescriptionCompat;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.RatingCompat;
 import android.support.v4.media.session.MediaSessionCompat.QueueItem;
+
+import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
 import com.google.android.exoplayer2.source.ExtractorMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.dash.DashMediaSource;
@@ -21,25 +23,28 @@ import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
 import com.guichaguri.trackplayer.service.Utils;
 import com.guichaguri.trackplayer.service.player.LocalPlayback;
+
 import java.util.ArrayList;
 import java.util.List;
+
+
+import okhttp3.OkHttpClient;
 import saschpe.exoplayer2.ext.icy.IcyHttpDataSource;
 import saschpe.exoplayer2.ext.icy.IcyHttpDataSourceFactory;
-
 
 import static android.support.v4.media.MediaMetadataCompat.*;
 
 /**
  * @author Guichaguri
  */
-public class Track {
+public class Track implements IcyHttpDataSource.IcyHeadersListener, IcyHttpDataSource.IcyMetadataListener {
 
     public static List<Track> createTracks(Context context, List objects, int ratingType) {
         List<Track> tracks = new ArrayList<>();
 
-        for(Object o : objects) {
-            if(o instanceof Bundle) {
-                tracks.add(new Track(context, (Bundle)o, ratingType));
+        for (Object o : objects) {
+            if (o instanceof Bundle) {
+                tracks.add(new Track(context, (Bundle) o, ratingType));
             } else {
                 return null;
             }
@@ -75,8 +80,8 @@ public class Track {
 
         String trackType = bundle.getString("type", "default");
 
-        for(TrackType t : TrackType.values()) {
-            if(t.name.equalsIgnoreCase(trackType)) {
+        for (TrackType t : TrackType.values()) {
+            if (t.name.equalsIgnoreCase(trackType)) {
                 type = t;
                 break;
             }
@@ -136,7 +141,7 @@ public class Track {
 
     public MediaSource toMediaSource(Context ctx, LocalPlayback playback) {
         // Updates the user agent if not set
-        if(userAgent == null || !userAgent.isEmpty())
+        if (userAgent == null || !userAgent.isEmpty())
             userAgent = Util.getUserAgent(ctx, "react-native-track-player");
 
         DataSource.Factory ds;
@@ -148,14 +153,14 @@ public class Track {
 
         } else {
 
+            OkHttpClient client = new OkHttpClient.Builder().build();
             // Creates a default http source factory, enabling cross protocol redirects
-        IcyHttpDataSourceFactory factory = new IcyHttpDataSourceFactory.Builder()
-                .setIcyHeadersListener(null)
-                .setIcyMetadataChangeListener(this).build();
-        // DefaultDataSourceFactory datasourceFactory = new DefaultDataSourceFactory(ctx, null, factory);
+            IcyHttpDataSourceFactory factory = new IcyHttpDataSourceFactory.Builder(client)
+                    .setIcyHeadersListener(this)
+                    .setIcyMetadataChangeListener(this).build();
+            // DefaultDataSourceFactory datasourceFactory = new DefaultDataSourceFactory(ctx, null, factory);
 
-
-            ds = DefaultDataSourceFactory(ctx, null, factory);
+            ds = new DefaultDataSourceFactory(ctx, null, factory);
             // ds = new DefaultHttpDataSourceFactory(
             //         userAgent, null,
             //         DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS,
@@ -163,16 +168,16 @@ public class Track {
             //         true
             // );
 
-        ExtractorMediaSource mediaSource = new ExtractorMediaSource.Factory(ds)
-                .setExtractorsFactory(new DefaultExtractorsFactory())
-                .createMediaSource(url);
+            ExtractorMediaSource mediaSource = new ExtractorMediaSource.Factory(ds)
+                    .setExtractorsFactory(new DefaultExtractorsFactory())
+                    .createMediaSource(uri);
 
 
             ds = playback.enableCaching(ds);
 
         }
 
-        switch(type) {
+        switch (type) {
             case DASH:
                 return new DashMediaSource.Factory(new DefaultDashChunkSource.Factory(ds), ds)
                         .createMediaSource(uri);
@@ -186,5 +191,15 @@ public class Track {
                 return new ExtractorMediaSource.Factory(ds)
                         .createMediaSource(uri);
         }
+    }
+
+    @Override
+    public void onIcyHeaders(IcyHttpDataSource.IcyHeaders icyHeaders) {
+        System.out.println(icyHeaders.getUrl());
+    }
+
+    @Override
+    public void onIcyMetaData(IcyHttpDataSource.IcyMetadata icyMetadata) {
+        System.out.println(icyMetadata.getMetadata());
     }
 }
