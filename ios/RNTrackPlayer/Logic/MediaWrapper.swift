@@ -14,6 +14,7 @@ protocol MediaWrapperDelegate: class {
     func playerSwitchedTracks(trackId: String?, time: TimeInterval?, nextTrackId: String?)
     func playerExhaustedQueue(trackId: String?, time: TimeInterval?)
     func playbackFailed(error: Error)
+    func updateMetadata(data: Any)
 }
 
 class MediaWrapper: AudioPlayerDelegate {
@@ -239,7 +240,7 @@ class MediaWrapper: AudioPlayerDelegate {
             delegate?.playerExhaustedQueue(trackId: item.id, time: position)
         }
     }
-    
+
     func audioPlayer(_ audioPlayer: AudioPlayer, didChangeStateFrom from: AudioPlayerState, to state: AudioPlayerState) {
         switch state {
         case .failed(let error):
@@ -247,5 +248,15 @@ class MediaWrapper: AudioPlayerDelegate {
         default:
             delegate?.playerUpdatedState()
         }
+    }
+
+    func audioPlayer(_ audioPlayer: AudioPlayer, didUpdateEmptyMetadataOn item: Track, withData data: Metadata) {
+        var dict: [String: String] = [:]
+        for md in data {
+            if let songName = md.value(forKey: "value") as? String, let key = md.value(forKey: "key") as? String{
+                dict[key] = songName;
+            }
+        }
+        delegate?.updateMetadata(data: dict)
     }
 }

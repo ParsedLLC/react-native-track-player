@@ -48,6 +48,11 @@ public class RNTrackPlayer: RCTEventEmitter, MediaWrapperDelegate {
         sendEvent(withName: "playback-error", body: ["error": error.localizedDescription])
     }
     
+    func updateMetadata(data: Any) {
+        guard !isTesting else { return }
+        self.sendEvent(withName: "metadataUpdate", body: data)
+    }
+
     private let isTesting = { () -> Bool in
         if let _ = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] {
             return true
@@ -100,7 +105,6 @@ public class RNTrackPlayer: RCTEventEmitter, MediaWrapperDelegate {
             "playback-state",
             "playback-error",
             "playback-track-changed",
-            
             "remote-stop",
             "remote-pause",
             "remote-play",
@@ -109,6 +113,7 @@ public class RNTrackPlayer: RCTEventEmitter, MediaWrapperDelegate {
             "remote-jump-forward",
             "remote-jump-backward",
             "remote-seek",
+            "metadataUpdate",
         ]
     }
     
