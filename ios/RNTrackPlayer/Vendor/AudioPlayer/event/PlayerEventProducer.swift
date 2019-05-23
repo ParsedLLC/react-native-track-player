@@ -229,7 +229,7 @@ class PlayerEventProducer: NSObject, EventProducer {
                 for md in currentItem.timedMetadata! {
                     if let songName = md.value(forKey: "value") as? String {
                         print("song name is '\(songName)'")
-                        RNTrackPlayer().updateMetadata(data: md)
+//                         RNTrackPlayer().updateMetadata(data: md)
                     }
 
                 }
