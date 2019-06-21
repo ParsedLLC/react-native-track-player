@@ -10,6 +10,7 @@ import android.support.v4.media.session.MediaSessionCompat.QueueItem;
 
 import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
 import com.google.android.exoplayer2.source.ExtractorMediaSource;
+import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.dash.DashMediaSource;
 import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource;
@@ -58,6 +59,7 @@ public class Track implements IcyHttpDataSource.IcyHeadersListener, IcyHttpDataS
 
     public TrackType type = TrackType.DEFAULT;
 
+    public String contentType;
     public String userAgent;
 
     public Uri artwork;
@@ -95,7 +97,16 @@ public class Track implements IcyHttpDataSource.IcyHeadersListener, IcyHttpDataS
             }
         }
 
+        contentType = bundle.getString("contentType");
         userAgent = bundle.getString("userAgent");
+
+        setMetadata(context, bundle, ratingType);
+
+        queueId = System.currentTimeMillis();
+        originalItem = bundle;
+    }
+
+    public void setMetadata(Context context, Bundle bundle, int ratingType) {
         artwork = Utils.getUri(context, bundle, "artwork");
 
         title = bundle.getString("title");
@@ -106,9 +117,9 @@ public class Track implements IcyHttpDataSource.IcyHeadersListener, IcyHttpDataS
         duration = Utils.toMillis(bundle.getDouble("duration", 0));
 
         rating = Utils.getRating(bundle, "rating", ratingType);
-
-        queueId = System.currentTimeMillis();
-        originalItem = bundle;
+        
+        if (originalItem != null && originalItem != bundle)
+            originalItem.putAll(bundle);
     }
 
     public MediaMetadataCompat.Builder toMediaMetadata() {
@@ -149,7 +160,7 @@ public class Track implements IcyHttpDataSource.IcyHeadersListener, IcyHttpDataS
 
     public MediaSource toMediaSource(Context ctx, LocalPlayback playback) {
         // Updates the user agent if not set
-        if (userAgent == null || !userAgent.isEmpty())
+        if(userAgent == null || userAgent.isEmpty())
             userAgent = Util.getUserAgent(ctx, "react-native-track-player");
 
         DataSource.Factory ds;
@@ -213,6 +224,7 @@ public class Track implements IcyHttpDataSource.IcyHeadersListener, IcyHttpDataS
                         .createMediaSource(uri);
             default:
                 return new ExtractorMediaSource.Factory(ds)
+                        .setExtractorsFactory(new DefaultExtractorsFactory().setConstantBitrateSeekingEnabled(true))
                         .createMediaSource(uri);
         }
     }

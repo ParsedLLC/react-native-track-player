@@ -59,12 +59,26 @@ public abstract class ExoPlayback<T extends Player> implements EventListener {
 
     public abstract void removeUpcomingTracks();
 
+    public void updateTrack(int index, Track track) {
+        int currentIndex = player.getCurrentWindowIndex();
+
+        queue.set(index, track);
+
+        if(currentIndex == index)
+            manager.getMetadata().updateMetadata(track);
+    }
+
     public Track getCurrentTrack() {
         int index = player.getCurrentWindowIndex();
         return index == C.INDEX_UNSET || index < 0 || index >= queue.size() ? null : queue.get(index);
     }
 
     public void skip(String id, Promise promise) {
+        if(id == null || id.isEmpty()) {
+            promise.reject("invalid_id", "The ID can't be null or empty");
+            return;
+        }
+
         for(int i = 0; i < queue.size(); i++) {
             if(id.equals(queue.get(i).id)) {
                 lastKnownWindow = player.getCurrentWindowIndex();
@@ -172,7 +186,7 @@ public abstract class ExoPlayback<T extends Player> implements EventListener {
     public int getState() {
         switch(player.getPlaybackState()) {
             case Player.STATE_BUFFERING:
-                return player.getPlayWhenReady() ? PlaybackStateCompat.STATE_BUFFERING : PlaybackStateCompat.STATE_NONE;
+                return PlaybackStateCompat.STATE_BUFFERING;
             case Player.STATE_ENDED:
                 return PlaybackStateCompat.STATE_STOPPED;
             case Player.STATE_IDLE:
