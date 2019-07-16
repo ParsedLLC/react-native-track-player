@@ -255,6 +255,7 @@ class MediaWrapper: AudioPlayerDelegate {
         for md in data {
             if let songName = md.value(forKey: "value") as? String, let key = md.value(forKey: "key") as? String {
                 dict[key] = songName;
+                dict["time"] = String(format: "%d", CMTimeGetSeconds(md.time));
             }
         }
         delegate?.updateMetadata(data: dict)
