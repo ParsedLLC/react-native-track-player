@@ -68,6 +68,7 @@ declare namespace RNTrackPlayer {
   export function getQueue(): Promise<Track[]>;
   export function skipToNext(): Promise<void>;
   export function skipToPrevious(): Promise<void>;
+  export function updateMetadataForTrack(id: string, metadata: TrackMetadata) : Promise<void>;
   export function removeUpcomingTracks(): Promise<void>;
 
   // Player Playback Commands
