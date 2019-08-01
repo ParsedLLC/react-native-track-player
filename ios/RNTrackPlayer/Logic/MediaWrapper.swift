@@ -105,7 +105,7 @@ class MediaWrapper: AudioPlayerDelegate {
     }
     
     func addTracks(_ tracks: [Track], before trackId: String?) {
-        if let trackIndex = queue.index(where: { $0.id == trackId }) {
+        if let trackIndex = queue.firstIndex(where: { $0.id == trackId }) {
             queue.insert(contentsOf: tracks, at: trackIndex)
             if (currentIndex >= trackIndex) { currentIndex = currentIndex + tracks.count }
         } else {
@@ -116,7 +116,7 @@ class MediaWrapper: AudioPlayerDelegate {
     func removeTracks(ids: [String]) {
         var actionAfterRemovals = "none"
         for id in ids {
-            if let trackIndex = queue.index(where: { $0.id == id }) {
+            if let trackIndex = queue.firstIndex(where: { $0.id == id }) {
                 if trackIndex < currentIndex { currentIndex = currentIndex - 1 }
                 else if id == queue.last?.id { actionAfterRemovals = "stop" }
                 else if trackIndex == currentIndex { actionAfterRemovals = "play" }
@@ -133,11 +133,13 @@ class MediaWrapper: AudioPlayerDelegate {
     }
     
     func removeUpcomingTracks() {
-        queue = queue.filter { $0.0 <= currentIndex }
+        let nextIndex = currentIndex + 1
+        guard nextIndex < queue.count else { return }
+        queue.removeSubrange(nextIndex..<queue.count)
     }
     
     func skipToTrack(id: String) {
-        if let trackIndex = queue.index(where: { $0.id == id }) {
+        if let trackIndex = queue.firstIndex(where: { $0.id == id }) {
             currentTrack?.skipped = true
             currentIndex = trackIndex
         }
@@ -197,13 +199,13 @@ class MediaWrapper: AudioPlayerDelegate {
         if let pitchAlgorithm = track.pitchAlgorithm {
             switch pitchAlgorithm {
             case PitchAlgorithm.linear.rawValue:
-                player.player?.currentItem?.audioTimePitchAlgorithm = AVAudioTimePitchAlgorithmVarispeed
+                player.player?.currentItem?.audioTimePitchAlgorithm = AVAudioTimePitchAlgorithm.varispeed
             case PitchAlgorithm.music.rawValue:
-                player.player?.currentItem?.audioTimePitchAlgorithm = AVAudioTimePitchAlgorithmSpectral
+                player.player?.currentItem?.audioTimePitchAlgorithm = AVAudioTimePitchAlgorithm.spectral
             case PitchAlgorithm.voice.rawValue:
-                player.player?.currentItem?.audioTimePitchAlgorithm = AVAudioTimePitchAlgorithmTimeDomain
+                player.player?.currentItem?.audioTimePitchAlgorithm = AVAudioTimePitchAlgorithm.timeDomain
             default:
-                player.player?.currentItem?.audioTimePitchAlgorithm = AVAudioTimePitchAlgorithmLowQualityZeroLatency
+                player.player?.currentItem?.audioTimePitchAlgorithm = AVAudioTimePitchAlgorithm.lowQualityZeroLatency
             }
         }
     }
