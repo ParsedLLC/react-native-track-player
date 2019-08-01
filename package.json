@@ -1,7 +1,27 @@
 {
-  "name": "react-native-track-player",
-  "version": "1.0.2",
-  "description": "A fully fledged audio module created for music apps",
+  "_from": "git+https://github.com/ParsedLLC/react-native-track-player.git#mm-update-metadata",
+  "_id": "react-native-track-player@1.0.2",
+  "_inBundle": false,
+  "_location": "/react-native-track-player",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "git",
+    "raw": "git+https://github.com/ParsedLLC/react-native-track-player.git#mm-update-metadata",
+    "rawSpec": "git+https://github.com/ParsedLLC/react-native-track-player.git#mm-update-metadata",
+    "saveSpec": "git+https://github.com/ParsedLLC/react-native-track-player.git#mm-update-metadata",
+    "fetchSpec": "https://github.com/ParsedLLC/react-native-track-player.git",
+    "gitCommittish": "mm-update-metadata"
+  },
+  "_requiredBy": [
+    "/"
+  ],
+  "_resolved": "git+https://github.com/ParsedLLC/react-native-track-player.git#349c555fcf01fef912181490b5ea864f89b0adf2",
+  "_spec": "git+https://github.com/ParsedLLC/react-native-track-player.git#mm-update-metadata",
+  "_where": "/Users/ryansjoquist/futuri-mobile",
+  "bugs": {
+    "url": "https://github.com/react-native-kit/react-native-track-player/issues"
+  },
+  "bundleDependencies": false,
   "contributors": [
     {
       "name": "David Chavez",
@@ -14,6 +34,9 @@
       "url": "http://guichaguri.com"
     }
   ],
+  "deprecated": false,
+  "description": "A fully fledged audio module created for music apps",
+  "homepage": "https://github.com/react-native-kit/react-native-track-player#readme",
   "keywords": [
     "react",
     "react-native",
@@ -29,15 +52,14 @@
     "windows"
   ],
   "license": "Apache-2.0",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/react-native-kit/react-native-track-player.git"
-  },
-  "bugs": {
-    "url": "https://github.com/react-native-kit/react-native-track-player/issues"
-  },
+  "name": "react-native-track-player",
   "peerDependencies": {
     "react-native": ">=0.57.0",
     "react": ">=16.5.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/react-native-kit/react-native-track-player.git"
+  },
+  "version": "1.0.2"
 }

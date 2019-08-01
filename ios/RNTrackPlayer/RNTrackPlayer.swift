@@ -123,7 +123,7 @@ public class RNTrackPlayer: RCTEventEmitter, MediaWrapperDelegate {
     @objc(setupPlayer:resolver:rejecter:)
     public func setupPlayer(config: [String: Any], resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
         do {
-            try AVAudioSession.sharedInstance().setCategory(AVAudioSessionCategoryPlayback)
+            try AVAudioSession.sharedInstance().setCategory(AVAudioSession.Category(rawValue: convertFromAVAudioSessionCategory(AVAudioSession.Category.playback)))
             try AVAudioSession.sharedInstance().setActive(true)
         } catch {
             reject("setup_audio_session_failed", "Failed to setup audio session", error)
@@ -142,7 +142,7 @@ public class RNTrackPlayer: RCTEventEmitter, MediaWrapperDelegate {
         let remoteCenter = MPRemoteCommandCenter.shared()
         let castedCapabilities = (options["capabilities"] as? [String])
         let supportedCapabilities = castedCapabilities?.filter { Capability(rawValue: $0) != nil }
-        let capabilities = supportedCapabilities?.flatMap { Capability(rawValue: $0) } ?? []
+        let capabilities = supportedCapabilities?.compactMap { Capability(rawValue: $0) } ?? []
         
         let enableStop = capabilities.contains(.stop)
         let enablePause = capabilities.contains(.pause)
@@ -357,39 +357,39 @@ public class RNTrackPlayer: RCTEventEmitter, MediaWrapperDelegate {
     
     // MARK: - Remote Dynamic Methods
     
-    func remoteSentStop() {
+    @objc func remoteSentStop() {
         sendEvent(withName: "remote-stop", body: nil)
     }
     
-    func remoteSentPause() {
+    @objc func remoteSentPause() {
         sendEvent(withName: "remote-pause", body: nil)
     }
 
-    func remoteSentSeek(event: MPChangePlaybackPositionCommandEvent) {
+    @objc func remoteSentSeek(event: MPChangePlaybackPositionCommandEvent) {
         sendEvent(withName: "remote-seek", body: ["position": event.positionTime])
     }
 
-    func remoteSentPlay() {
+    @objc func remoteSentPlay() {
         sendEvent(withName: "remote-play", body: nil)
     }
     
-    func remoteSentNext() {
+    @objc func remoteSentNext() {
         sendEvent(withName: "remote-next", body: nil)
     }
     
-    func remoteSentPrevious() {
+    @objc func remoteSentPrevious() {
         sendEvent(withName: "remote-previous", body: nil)
     }
     
-    func remoteSendSkipForward(event: MPSkipIntervalCommandEvent) {
+    @objc func remoteSendSkipForward(event: MPSkipIntervalCommandEvent) {
         sendEvent(withName: "remote-jump-forward", body: ["interval": event.interval])
     }
     
-    func remoteSendSkipBackward(event: MPSkipIntervalCommandEvent) {
+    @objc func remoteSendSkipBackward(event: MPSkipIntervalCommandEvent) {
         sendEvent(withName: "remote-jump-backward", body: ["interval": event.interval])
     }
     
-    func remoteSentPlayPause() {
+    @objc func remoteSentPlayPause() {
         if mediaWrapper.mappedState == .paused {
             sendEvent(withName: "remote-play", body: nil)
             return
@@ -397,4 +397,9 @@ public class RNTrackPlayer: RCTEventEmitter, MediaWrapperDelegate {
         
         sendEvent(withName: "remote-pause", body: nil)
     }
+}
+
+// Helper function inserted by Swift 4.2 migrator.
+fileprivate func convertFromAVAudioSessionCategory(_ input: AVAudioSession.Category) -> String {
+	return input.rawValue
 }
