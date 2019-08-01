@@ -7,10 +7,9 @@ import android.support.v4.media.MediaDescriptionCompat;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.RatingCompat;
 import android.support.v4.media.session.MediaSessionCompat.QueueItem;
-
 import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
-import com.google.android.exoplayer2.source.ExtractorMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.source.dash.DashMediaSource;
 import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource;
 import com.google.android.exoplayer2.source.hls.HlsMediaSource;
@@ -20,30 +19,26 @@ import com.google.android.exoplayer2.upstream.*;
 import com.google.android.exoplayer2.util.Util;
 import com.guichaguri.trackplayer.service.Utils;
 import com.guichaguri.trackplayer.service.player.LocalPlayback;
+
 import java.io.IOException;
-import com.guichaguri.trackplayer.service.MusicService;
-import com.guichaguri.trackplayer.module.MusicEvents;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-
-
-import okhttp3.OkHttpClient;
-import saschpe.exoplayer2.ext.icy.IcyHttpDataSource;
-import saschpe.exoplayer2.ext.icy.IcyHttpDataSourceFactory;
+import java.util.Map;
 
 import static android.support.v4.media.MediaMetadataCompat.*;
 
 /**
  * @author Guichaguri
  */
-public class Track implements IcyHttpDataSource.IcyHeadersListener, IcyHttpDataSource.IcyMetadataListener {
+public class Track {
 
     public static List<Track> createTracks(Context context, List objects, int ratingType) {
         List<Track> tracks = new ArrayList<>();
 
-        for (Object o : objects) {
-            if (o instanceof Bundle) {
-                tracks.add(new Track(context, (Bundle) o, ratingType));
+        for(Object o : objects) {
+            if(o instanceof Bundle) {
+                tracks.add(new Track(context, (Bundle)o, ratingType));
             } else {
                 return null;
             }
@@ -58,6 +53,7 @@ public class Track implements IcyHttpDataSource.IcyHeadersListener, IcyHttpDataS
 
     public TrackType type = TrackType.DEFAULT;
 
+    public String contentType;
     public String userAgent;
 
     public Uri artwork;
@@ -71,7 +67,8 @@ public class Track implements IcyHttpDataSource.IcyHeadersListener, IcyHttpDataS
     public Bundle originalItem;
 
     public RatingCompat rating;
-    public MusicService musicService = new MusicService();
+
+    public Map<String, String> headers;
 
     public final long queueId;
 
@@ -88,14 +85,31 @@ public class Track implements IcyHttpDataSource.IcyHeadersListener, IcyHttpDataS
 
         String trackType = bundle.getString("type", "default");
 
-        for (TrackType t : TrackType.values()) {
-            if (t.name.equalsIgnoreCase(trackType)) {
+        for(TrackType t : TrackType.values()) {
+            if(t.name.equalsIgnoreCase(trackType)) {
                 type = t;
                 break;
             }
         }
 
+        contentType = bundle.getString("contentType");
         userAgent = bundle.getString("userAgent");
+
+        Bundle httpHeaders = bundle.getBundle("headers");
+        if(httpHeaders != null) {
+            headers = new HashMap<>();
+            for(String header : httpHeaders.keySet()) {
+                headers.put(header, httpHeaders.getString(header));
+            }
+        }
+
+        setMetadata(context, bundle, ratingType);
+
+        queueId = System.currentTimeMillis();
+        originalItem = bundle;
+    }
+
+    public void setMetadata(Context context, Bundle bundle, int ratingType) {
         artwork = Utils.getUri(context, bundle, "artwork");
 
         title = bundle.getString("title");
@@ -107,8 +121,8 @@ public class Track implements IcyHttpDataSource.IcyHeadersListener, IcyHttpDataS
 
         rating = Utils.getRating(bundle, "rating", ratingType);
 
-        queueId = System.currentTimeMillis();
-        originalItem = bundle;
+        if (originalItem != null && originalItem != bundle)
+            originalItem.putAll(bundle);
     }
 
     public MediaMetadataCompat.Builder toMediaMetadata() {
@@ -122,7 +136,9 @@ public class Track implements IcyHttpDataSource.IcyHeadersListener, IcyHttpDataS
         builder.putString(METADATA_KEY_MEDIA_URI, uri.toString());
         builder.putString(METADATA_KEY_MEDIA_ID, id);
 
-        builder.putLong(METADATA_KEY_DURATION, duration);
+        if (duration > 0) {
+            builder.putLong(METADATA_KEY_DURATION, duration);
+        }
 
         if (artwork != null) {
             builder.putString(METADATA_KEY_ART_URI, artwork.toString());
@@ -149,7 +165,7 @@ public class Track implements IcyHttpDataSource.IcyHeadersListener, IcyHttpDataS
 
     public MediaSource toMediaSource(Context ctx, LocalPlayback playback) {
         // Updates the user agent if not set
-        if (userAgent == null || !userAgent.isEmpty())
+        if(userAgent == null || userAgent.isEmpty())
             userAgent = Util.getUserAgent(ctx, "react-native-track-player");
 
         DataSource.Factory ds;
@@ -177,31 +193,23 @@ public class Track implements IcyHttpDataSource.IcyHeadersListener, IcyHttpDataS
 
         } else {
 
-            OkHttpClient client = new OkHttpClient.Builder().build();
             // Creates a default http source factory, enabling cross protocol redirects
-            IcyHttpDataSourceFactory factory = new IcyHttpDataSourceFactory.Builder(client)
-                    .setIcyHeadersListener(this)
-                    .setIcyMetadataChangeListener(this).build();
-            // DefaultDataSourceFactory datasourceFactory = new DefaultDataSourceFactory(ctx, null, factory);
+            DefaultHttpDataSourceFactory factory = new DefaultHttpDataSourceFactory(
+                    userAgent, null,
+                    DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS,
+                    DefaultHttpDataSource.DEFAULT_READ_TIMEOUT_MILLIS,
+                    true
+            );
 
-            ds = new DefaultDataSourceFactory(ctx, null, factory);
-            // ds = new DefaultHttpDataSourceFactory(
-            //         userAgent, null,
-            //         DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS,
-            //         DefaultHttpDataSource.DEFAULT_READ_TIMEOUT_MILLIS,
-            //         true
-            // );
+            if(headers != null) {
+                factory.getDefaultRequestProperties().set(headers);
+            }
 
-            ExtractorMediaSource mediaSource = new ExtractorMediaSource.Factory(ds)
-                    .setExtractorsFactory(new DefaultExtractorsFactory())
-                    .createMediaSource(uri);
-
-
-            ds = playback.enableCaching(ds);
+            ds = playback.enableCaching(factory);
 
         }
 
-        switch (type) {
+        switch(type) {
             case DASH:
                 return new DashMediaSource.Factory(new DefaultDashChunkSource.Factory(ds), ds)
                         .createMediaSource(uri);
@@ -212,22 +220,9 @@ public class Track implements IcyHttpDataSource.IcyHeadersListener, IcyHttpDataS
                 return new SsMediaSource.Factory(new DefaultSsChunkSource.Factory(ds), ds)
                         .createMediaSource(uri);
             default:
-                return new ExtractorMediaSource.Factory(ds)
+                return new ProgressiveMediaSource.Factory(ds, new DefaultExtractorsFactory()
+                        .setConstantBitrateSeekingEnabled(true))
                         .createMediaSource(uri);
         }
-    }
-
-    @Override
-    public void onIcyHeaders(IcyHttpDataSource.IcyHeaders icyHeaders) {
-        System.out.println(icyHeaders.getUrl());
-    }
-
-    @Override
-    public void onIcyMetaData(IcyHttpDataSource.IcyMetadata icyMetadata) {
-        Bundle bundle = new Bundle();
-        bundle.putString("metadata", icyMetadata.getStreamTitle()); // temp legacy support
-        bundle.putString("title", icyMetadata.getStreamTitle());
-        bundle.putString("streamUrl", icyMetadata.getStreamUrl());
-        musicService.emit(MusicEvents.METADATA_UPDATE, bundle);
     }
 }

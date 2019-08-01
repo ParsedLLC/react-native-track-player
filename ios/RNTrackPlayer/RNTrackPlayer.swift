@@ -50,7 +50,7 @@ public class RNTrackPlayer: RCTEventEmitter, MediaWrapperDelegate {
     
     func updateMetadata(data: Any) {
         guard !isTesting else { return }
-        self.sendEvent(withName: "metadataUpdate", body: data)
+        self.sendEvent(withName: "playback-metadata-received", body: data)
     }
 
     private let isTesting = { () -> Bool in
@@ -113,7 +113,7 @@ public class RNTrackPlayer: RCTEventEmitter, MediaWrapperDelegate {
             "remote-jump-forward",
             "remote-jump-backward",
             "remote-seek",
-            "metadataUpdate",
+            "playback-metadata-received",
         ]
     }
     
